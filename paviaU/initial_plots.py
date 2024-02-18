@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -8,18 +9,30 @@ def print_basic_statistics(df):
     print("A few rows of data: \n")
     print(df.sample(5))
 
-def read_dataset():
-    df = pd.read_csv('paviaU/paviaU.csv')
+def read_dataset(gt=False):
+    if gt:
+        df = pd.read_csv('paviaU/paviaU_gt.csv')
+    else:
+        df = pd.read_csv('paviaU/paviaU.csv')
 
     df.drop(df.columns[0], axis=1, inplace = True)
-
+    
     return df
 
-def plot_spectral_band(index, num=1):
+def plot_gt(df):
+    arr = df.to_numpy()
+    plt.matshow(arr, cmap=plt.cm.viridis)
+    plt.axis('off')
+    plt.colorbar()
+    plt.show()
+
+
+def plot_spectral_band(num=5):
     arr_list = []
-    for i in range(index, index+num):
-        arr = df[f'{i}'].to_numpy()
-        arr_list.append(arr.reshape((610,340)))
+    for i in range(num):
+        c = np.random.randint(103)
+        arr = df[f'{c}'].to_numpy()
+        arr_list.append((arr.reshape((610,340)),c))
 
     _, axs = plt.subplots(1,num, sharex=True, sharey=True)
 
@@ -27,12 +40,13 @@ def plot_spectral_band(index, num=1):
         axs  = [axs]
 
     for i in range(num):
-        axs[i].matshow(arr_list[i], cmap=plt.cm.viridis)
+        arr,c = arr_list[i]
+        axs[i].matshow(arr, cmap=plt.cm.viridis)
+        axs[i].axis('off')
+        axs[i].title.set_text(f"Band - {c}")
     plt.show()
 
 
-df = read_dataset()
-# print_basic_statistics(df)
 
-plot_spectral_band(95)
-# plot_spectral_band(102)
+df = read_dataset(gt=False)
+plot_spectral_band()
