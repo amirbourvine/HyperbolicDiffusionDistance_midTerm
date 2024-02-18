@@ -11,9 +11,9 @@ def print_basic_statistics(df):
 
 def read_dataset(gt=False):
     if gt:
-        df = pd.read_csv('paviaU/paviaU_gt.csv')
+        df = pd.read_csv('paviaU_gt.csv')
     else:
-        df = pd.read_csv('paviaU/paviaU.csv')
+        df = pd.read_csv('paviaU.csv')
 
     df.drop(df.columns[0], axis=1, inplace = True)
     
@@ -27,7 +27,7 @@ def plot_gt(df):
     plt.show()
 
 
-def plot_spectral_band(num=5):
+def plot_spectral_band(df, num=5):
     arr_list = []
     for i in range(num):
         c = np.random.randint(103)
@@ -46,7 +46,3 @@ def plot_spectral_band(num=5):
         axs[i].title.set_text(f"Band - {c}")
     plt.show()
 
-
-
-df = read_dataset(gt=False)
-plot_spectral_band()
