@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import earthpy.plot as ep
 
 def print_basic_statistics(df):
     print("Has 1 image, 103 spectral bands, 610 * 340 pixels (207400 in total)")
@@ -26,6 +27,11 @@ def plot_gt(df):
     plt.colorbar()
     plt.show()
 
+def plot_composite(df):
+    data = df.to_numpy().reshape(((610, 340,103)))
+    data = np.moveaxis(data, 2, 0)
+    ep.plot_rgb(data, rgb=(36, 17, 11), title='Composite Image of Pavia University', figsize=(10, 8))
+    plt.show()
 
 def plot_spectral_band(df, num=5):
     arr_list = []
