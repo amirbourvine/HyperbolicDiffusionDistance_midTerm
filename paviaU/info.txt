@@ -1,0 +1,12 @@
+PRE-PROCEESING TRICKS:
+
+link: https://www.kaggle.com/code/ardaorcun/hyperspectral-paviau
+
+1. PCA- reduce the number of spectral bands by sklearn.decomposition.PCA.
+    executes dimensionality reduction using SVD.
+2. IMAGE_CUBES- smooth out outliers by grouping points next to each other, giving the label of the center point 
+    (could try something else).
+3. CLEANING- remove zero labels- reduces the number of data points by almost 5.
+
+
+
