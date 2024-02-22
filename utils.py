@@ -8,6 +8,7 @@ import networkx as nx
 from scipy.linalg import eigh
 from sklearn.manifold import MDS
 from scipy.spatial import distance
+from matplotlib.colors import Normalize
 
 # CONSTANTS:
 
@@ -232,8 +233,11 @@ def display_figure_C(shortest_paths_mat):
     pos = axs[1].matshow((X[1]), cmap=plt.cm.viridis)
     fig.colorbar(pos, ax=axs[1], shrink = 0.28)
     axs[1].set_title("1")
-    pos = axs[2].matshow((X[CONST_K]), cmap=plt.cm.viridis)
-    fig.colorbar(pos, ax=axs[2], shrink = 0.28)
+    
+    temp = X[CONST_K]
+    temp[:,-1] = temp[:,-1]/temp[0,-1]*0.75
+    pos = axs[2].matshow(temp, cmap=plt.cm.viridis)
+    fig.colorbar(pos, ax=axs[2], shrink = 0.28,spacing='proportional')
     axs[2].set_title("K")
 
     return X
@@ -276,11 +280,12 @@ def calculate_P_from_points(x_points, y_points, z_points):
 
     return calc_P(d)
 
-def plot_embedding(x_points, y_points, z_points, colors):
+
+def calc_eigen_vecs(P):
   curr_val = []
   curr_vec = []
 
-  eigenvalues, eigenvectors = np.linalg.eig(calculate_P_from_points(x_points, y_points, z_points))
+  eigenvalues, eigenvectors = np.linalg.eig(P)
   eigenvaluesKeep = eigenvalues
   eigenvectorsKeep = eigenvectors
 
@@ -301,10 +306,18 @@ def plot_embedding(x_points, y_points, z_points, colors):
 
   lambda_1 = eigenvalues[ind1]
   phi_1 = np.real(eigenvectors[ind1])
-  v1 = lambda_1*phi_1
-
+  
   lambda_2 = eigenvalues[ind2]
   phi_2 = np.real(eigenvectors[ind2])
+
+
+  return lambda_1,phi_1,lambda_2,phi_2
+
+def plot_embedding(x_points, y_points, z_points, colors):
+
+  lambda_1,phi_1,lambda_2,phi_2 = calc_eigen_vecs(calculate_P_from_points(x_points, y_points, z_points))
+
+  v1 = lambda_1*phi_1
   v2 = lambda_2*phi_2
 
   _ = plt.figure()
@@ -409,15 +422,15 @@ def random_points_on_circle(center, radius, n):
     return x, y
 
 def plot_weights():
-    center = 15
+    center = 25
     radius = 10
-    num_points = 120
+    num_points = 500
     x_circle1, y_circle1 = random_points_on_circle((center, 0), radius, num_points)
     x_circle2, y_circle2 = random_points_on_circle((-center, 0), radius, num_points)
 
-    num_points_rectangle = 15
-    epsilon_width = 0.1
-    height_radius_ration = 0.3
+    num_points_rectangle = 5
+    epsilon_width = 0.01
+    height_radius_ration = 0.1
     x_bridge, y_bridge = random_points_on_rectangle((0, 0), (center - radius) * (2 + epsilon_width), radius * height_radius_ration, num_points_rectangle)
 
     x_points = np.concatenate((x_circle1, x_circle2, x_bridge))
@@ -451,10 +464,10 @@ def plot_points_with_eucliean_distance_color(x_values, y_values, index):
     normalized_distances = (distances - np.min(distances)) / (np.max(distances) - np.min(distances))
 
     # Define colors based on normalized distances (shades of red)
-    colors = 1 - normalized_distances
+    colors = normalized_distances
 
     # Plot the points with shaded colors
-    plt.scatter(x_values, y_values, c=colors, cmap="Reds")
+    plt.scatter(x_values, y_values, c=colors, cmap = cm.afmhot)
 
     plt.colorbar()
 
@@ -478,10 +491,31 @@ def plot_points_with_diffusion_distance_color(x_points, y_points, index):
 
     distances = np.array(distance.cdist(points, points, 'euclidean'))
 
-    colors,norm,cmap = multi_scale_propagated_densities_colors(distances, index, 0)
+    # _, eigenvectors = np.linalg.eig(calc_P(distances))
+    lambda_1,phi_1,lambda_2,phi_2 = calc_eigen_vecs(calc_P(distances))
+
+    v1 = lambda_1*phi_1
+    v2 = lambda_2*phi_2
+
+    eigenvectors = np.zeros((v1.shape[0],2))
+    eigenvectors[:,0] = v1
+    eigenvectors[:,1] = v2
+
+    values  = np.zeros(points.shape[0])
+    for i in range(values.shape[0]):
+       # is this what Ya-Wei meant?
+       values[i] = np.linalg.norm(eigenvectors[i,:]-eigenvectors[index,:])
+    cmap = cm.afmhot
+
+
+    # Normalize distances to range [0, 1]
+    normalized_values = (values - np.min(values)) / (np.max(values) - np.min(values))
+
+    # Define colors based on normalized distances (shades of red)
+    # colors = 1 - normalized_values
 
     # Plot the points with shaded colors
-    plt.scatter(x_points, y_points, c=colors, cmap=cmap, norm=norm)
+    plt.scatter(x_points, y_points, c=normalized_values, cmap=cmap)
 
     plt.colorbar()
 

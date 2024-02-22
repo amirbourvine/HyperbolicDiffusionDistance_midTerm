@@ -33,22 +33,25 @@ def plot_composite(df):
     ep.plot_rgb(data, rgb=(36, 17, 11), title='Composite Image of Pavia University', figsize=(10, 8))
     plt.show()
 
-def plot_spectral_band(df, num=5):
+def plot_spectral_band(df, num=4):
     arr_list = []
+    cmaps = ['Greys', 'Purples', 'Blues', 'Greens',  'Reds']
     for i in range(num):
         c = np.random.randint(103)
         arr = df[f'{c}'].to_numpy()
         arr_list.append((arr.reshape((610,340)),c))
 
-    _, axs = plt.subplots(1,num, sharex=True, sharey=True)
-
+    _, axs = plt.subplots(1,num, sharex=True, sharey=True, figsize=(15, 15))
+    plt.tight_layout(pad=5.0)
+    
     if num == 1:
         axs  = [axs]
 
     for i in range(num):
         arr,c = arr_list[i]
-        axs[i].matshow(arr, cmap=plt.cm.viridis)
+        im = axs[i].matshow(arr, cmap=cmaps[i%len(cmaps)])
         axs[i].axis('off')
         axs[i].title.set_text(f"Band - {c}")
+        plt.colorbar(im,ax=axs[i],fraction=0.08, pad=0.04)
     plt.show()
 
