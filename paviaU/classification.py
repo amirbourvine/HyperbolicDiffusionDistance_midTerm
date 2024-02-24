@@ -65,36 +65,29 @@ def split_train_test(distances_mat, labels, test_size = 0.2):
     return indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test
 
 
+def main(distances_mat, labels):
+
+    distances_mat, labels = throw_0_labels(distances_mat, labels)
+
+    indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test = split_train_test(distances_mat, labels, test_size = 0.2)
+
+    clf = kNN(n_neighbors=1)
+    clf.fit(labels=labels_train)
 
 
-distances_mat = np.zeros((10,10))
-labels = np.zeros((10), dtype=int)
-
-for i in range(10):
-    for j in range(10):
-        distances_mat[i,j] = 10*i+j
-    labels[i] = i
+    print("Train Accuracy: ",clf.score(dmat_train, labels_train))
+    print("Test Accuracy: ",clf.score(dmat_test, labels_test))
 
 
-print(distances_mat)
-print(labels)
-print("XXXXXXXXXXXXXXX")
 
-distances_mat, labels = throw_0_labels(distances_mat, labels)
+if __name__ == "__main__":
+    distances_mat = np.zeros((10,10))
+    labels = np.zeros((10), dtype=int)
 
-print(distances_mat)
-print(labels)
-print("XXXXXXXXXXXXXXX")
-
-indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test = split_train_test(distances_mat, labels, test_size = 0.2)
-
-print(dmat_train)
-print(labels_train)
-print(dmat_test)
-print(labels_test) 
-
-print("XXXXXXXXXXXXXXXXXXXXXX")
-clf = kNN(n_neighbors=1)
-clf.fit(labels=labels_train)
-preds = clf.predict(dmat_test)
-print(preds)
+    for i in range(10):
+        for j in range(10):
+            distances_mat[i,j] = 10*i+j
+        labels[i] = i
+    
+    main(distances_mat, labels)
+    
