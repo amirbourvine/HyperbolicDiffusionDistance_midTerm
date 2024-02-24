@@ -60,7 +60,7 @@ def prepare(X,y, rows_factor, cols_factor):
 
     print(P.shape)
 
-    return distances,P
+    return distances,P,y_patches
 
 def figure_B(distances, rows_factor, cols_factor):
     import math
