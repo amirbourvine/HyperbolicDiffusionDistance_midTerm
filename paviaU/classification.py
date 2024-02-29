@@ -65,13 +65,13 @@ def split_train_test(distances_mat, labels, test_size = 0.2):
     return indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test
 
 
-def main(distances_mat, labels):
+def main(distances_mat, labels, n_neighbors):
 
     distances_mat, labels = throw_0_labels(distances_mat, labels)
 
     indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test = split_train_test(distances_mat, labels, test_size = 0.2)
 
-    clf = kNN(n_neighbors=1)
+    clf = kNN(n_neighbors=n_neighbors)
     clf.fit(labels=labels_train)
 
     train_acc = clf.score(dmat_train, labels_train)
@@ -79,7 +79,11 @@ def main(distances_mat, labels):
     print("Train Accuracy: ",train_acc)
     print("Test Accuracy: ",test_acc)
 
-    return train_acc,test_acc
+    preds = clf.predict(dmat_test)
+
+    return train_acc,test_acc, preds, labels_test
+
+
 
 
     

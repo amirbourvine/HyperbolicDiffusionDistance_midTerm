@@ -3,8 +3,9 @@ from scipy.spatial.distance import cdist
 import sys
 sys.path.insert(1, '../')
 from utils import *
+from sklearn.preprocessing import MinMaxScaler
 
-def padWithZeros(X, left_margin=1, right_margin=1, top_margin=1, bottom_margin=1, dim=3):
+def padWithZeros(X, left_margin, right_margin, top_margin, bottom_margin, dim=3):
     if dim == 3:
         newX = np.zeros((X.shape[0] + left_margin + right_margin, X.shape[1] + top_margin + bottom_margin, X.shape[2]))
         newX[left_margin:X.shape[0] + left_margin, top_margin:X.shape[1] + top_margin, :] = X
@@ -18,8 +19,21 @@ def padWithZeros(X, left_margin=1, right_margin=1, top_margin=1, bottom_margin=1
 
     return newX
 
+def calc_patch_label(labels, i, j, rows_factor, cols_factor, method='center'):
+    if method=='center':
+        return labels[i*rows_factor + rows_factor//2, j*cols_factor + cols_factor//2]
+    elif method=='most_common':
+        labels_patch = (labels[i*rows_factor : (i+1)*rows_factor, j*cols_factor : (j+1)*cols_factor]).astype(int)
+        counts = np.bincount(labels_patch.flatten())
 
-def patch_data(data, labels, rows_factor=3, cols_factor=3):
+        # in order to not let 0 values take over and set many labels to 0 which leads to small number of non zero labeled patches
+        counts[0]=1
+        
+        return np.argmax(counts)
+    
+    print("ERROR- INCORRECT METHOD FOR LABELING PATCHES")
+
+def patch_data(data, labels, rows_factor, cols_factor, method_label_patch):
     rows, cols, channels = data.shape
 
     left_margin = ((-rows) % rows_factor) // 2
@@ -39,12 +53,28 @@ def patch_data(data, labels, rows_factor=3, cols_factor=3):
         for j in range(new_cols // cols_factor):
             datapoint = data[i*rows_factor: (i+1)*rows_factor, j*cols_factor: (j+1)*cols_factor, :]
             patched_data[i, j] = datapoint
-            patched_labels[i, j] = labels[i*rows_factor + rows_factor//2, j*cols_factor + cols_factor//2]
+            patched_labels[i, j] = calc_patch_label(labels, i, j, rows_factor, cols_factor, method=method_label_patch)
 
     return patched_data, patched_labels
 
-def prepare(X,y, rows_factor, cols_factor):
-    X_patches, y_patches = patch_data(X.reshape((610,340, 103)), y, rows_factor, cols_factor)
+
+def normalize_each_band(X):
+    X_normalized = np.zeros_like(X,dtype=float)
+    for i in range(X.shape[2]):
+        X_band = X[:,:,i]
+        scaler = MinMaxScaler()
+        scaled_data = scaler.fit_transform(X_band)
+        X_normalized[:,:,i] = scaled_data
+
+    return X_normalized
+
+def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center'):
+    X = X.reshape((610,340, 103))
+
+    if is_normalize_each_band:
+        X = normalize_each_band(X)
+
+    X_patches, y_patches = patch_data(X, y, rows_factor, cols_factor, method_label_patch)
 
     y_patches = y_patches.flatten()
 
