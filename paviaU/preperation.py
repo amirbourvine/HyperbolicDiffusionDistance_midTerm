@@ -28,7 +28,7 @@ def calc_patch_label(labels, i, j, rows_factor, cols_factor, method='center'):
 
         # in order to not let 0 values take over and set many labels to 0 which leads to small number of non zero labeled patches
         counts[0]=1
-        
+
         return np.argmax(counts)
     
     print("ERROR- INCORRECT METHOD FOR LABELING PATCHES")
@@ -55,7 +55,8 @@ def patch_data(data, labels, rows_factor, cols_factor, method_label_patch):
             patched_data[i, j] = datapoint
             patched_labels[i, j] = calc_patch_label(labels, i, j, rows_factor, cols_factor, method=method_label_patch)
 
-    return patched_data, patched_labels
+
+    return patched_data, patched_labels, labels
 
 
 def normalize_each_band(X):
@@ -74,7 +75,9 @@ def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_l
     if is_normalize_each_band:
         X = normalize_each_band(X)
 
-    X_patches, y_patches = patch_data(X, y, rows_factor, cols_factor, method_label_patch)
+    X_patches, y_patches, labels_padded= patch_data(X, y, rows_factor, cols_factor, method_label_patch)
+
+    num_patches_in_row = y_patches.shape[1]
 
     y_patches = y_patches.flatten()
 
@@ -90,7 +93,7 @@ def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_l
 
     print(P.shape)
 
-    return distances,P,y_patches
+    return distances,P,y_patches,num_patches_in_row, labels_padded
 
 def figure_B(distances, rows_factor, cols_factor):
     import math
