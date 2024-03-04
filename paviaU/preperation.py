@@ -5,6 +5,10 @@ sys.path.insert(1, '../')
 from utils import *
 from sklearn.preprocessing import MinMaxScaler
 
+import matplotlib
+
+matplotlib.use('TkAgg')
+
 def padWithZeros(X, left_margin, right_margin, top_margin, bottom_margin, dim=3):
     if dim == 3:
         newX = np.zeros((X.shape[0] + left_margin + right_margin, X.shape[1] + top_margin + bottom_margin, X.shape[2]))

@@ -14,7 +14,6 @@ class kNN():
       return self
 
     def score(self, distances, indices_test, y):
-        print("y.shape: ", y.shape)
         y_mat = np.tile(self.labels,(distances.shape[0],1))
 
         sorted_distances_labels = np.take_along_axis(y_mat, np.argsort(distances, axis=1), axis=1)
@@ -54,7 +53,6 @@ def throw_0_labels(distances_mat, labels, patch_to_points_dict):
     non_zero_indices = np.sort(non_zero_indices)
 
     new_res = {}
-    print(non_zero_indices)
     for i in range(non_zero_indices.shape[0]):
         new_res[i] = patch_to_points_dict[non_zero_indices[i]]
 
@@ -104,8 +102,6 @@ def patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row):
         j_start = j_patch*cols_factor
         res[i] = (i_start, i_start+rows_factor, j_start, j_start+cols_factor)
     
-    print(res)
-
     return res
 
 
