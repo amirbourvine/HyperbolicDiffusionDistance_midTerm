@@ -4,9 +4,10 @@ import random
 
 
 class kNN():
-    def __init__(self, n_neighbors:int = 3):
+    def __init__(self, n_neighbors:int = 3, is_divided = False):
         # assume non-negative labels
         self.n_neighbors = n_neighbors
+        self.is_divided = is_divided
 
     def fit(self, labels, patch_to_points_dict):
       self.labels = labels
@@ -46,9 +47,49 @@ class kNN():
                         gt.append(y[i,j])
         
         return total_correct/total_preds, preds,gt
+    
+    def score_divided(self, distances_arr, indices_test, y):
+        y_mat = np.tile(self.labels,(distances_arr[0].shape[0],1))
+
+        sorted_distances_labels = np.ndarray(shape=(distances_arr.shape[0],distances_arr[0].shape[0],distances_arr[0].shape[1]))
+        for i in range(distances_arr.shape[0]):
+            sorted_distances_labels[i,:,:] = np.take_along_axis(y_mat, np.argsort(distances_arr[i], axis=1), axis=1)
+
+        X_kNN = sorted_distances_labels[:,:, :self.n_neighbors]
+
+        X_kNN = np.swapaxes(X_kNN,0,1)
+        X_kNN = X_kNN.reshape(shape=(X_kNN.shape[0],X_kNN.shape[1]*X_kNN.shape[2]))
 
 
-def throw_0_labels(distances_mat, labels, patch_to_points_dict):
+        predictions = np.zeros(X_kNN.shape[0])
+        for i in range(predictions.shape[0]):
+            curr = np.bincount(X_kNN[i,:])
+            predictions[i] = np.argmax(curr)
+
+
+        print("Number of patches: ", predictions.shape[0])
+
+        total_preds = 0
+        total_correct = 0
+        preds = []
+        gt = []
+        for ind in range(predictions.shape[0]):
+            ind_patch = indices_test[ind]
+            i_start,i_end,j_start,j_end = self.patch_to_points_dict[ind_patch]
+            for i in range(i_start,i_end):
+                for j in range(j_start,j_end):
+                    if y[i,j]!=0:
+                        total_preds += 1
+                        if y[i,j] == predictions[ind]:
+                            total_correct += 1
+
+                        preds.append(predictions[ind])
+                        gt.append(y[i,j])
+        
+        return total_correct/total_preds, preds,gt
+
+
+def throw_0_labels(distances_mat, labels, patch_to_points_dict, is_divided=False):
     non_zero_indices = np.where(labels != 0)[0]
     non_zero_indices = np.sort(non_zero_indices)
 
@@ -56,12 +97,24 @@ def throw_0_labels(distances_mat, labels, patch_to_points_dict):
     for i in range(non_zero_indices.shape[0]):
         new_res[i] = patch_to_points_dict[non_zero_indices[i]]
 
-    dmat_new = distances_mat[np.ix_(non_zero_indices, non_zero_indices)]
     labels_new = labels[np.ix_(non_zero_indices)]
 
-    return dmat_new,labels_new, new_res
+    if not is_divided:
+        dmat_new = distances_mat[np.ix_(non_zero_indices, non_zero_indices)]
+        return dmat_new,labels_new, new_res
+    else:
+        distances_mat_new = np.ndarray(shape=(distances_mat.shape[0],), dtype=np.ndarray)
+        for i in range(distances_mat_new.shape[0]):
+            distances_mat_new[i] = (distances_mat[i])[np.ix_(non_zero_indices, non_zero_indices)]
 
-def split_train_test(distances_mat, labels, test_size = 0.2):
+        return distances_mat_new,labels_new, new_res
+
+
+    
+
+    
+
+def split_train_test(distances_mat, labels, test_size = 0.2, is_divided=False):
     """
     labels is np.array
     returns the train-test split:
@@ -72,7 +125,13 @@ def split_train_test(distances_mat, labels, test_size = 0.2):
     indices_train = random.sample(range(0, labels.shape[0]), num_training)
     indices_train = np.sort(indices_train)
     # print(indices_train)
-    dmat_train = distances_mat[np.ix_(indices_train, indices_train)]
+    if not is_divided:
+        dmat_train = distances_mat[np.ix_(indices_train, indices_train)]
+    else:
+        dmat_train = np.ndarray(shape=(distances_mat.shape[0],), dtype=np.ndarray)
+        for i in range(dmat_train.shape[0]):
+            dmat_train[i] = (distances_mat[i])[np.ix_(indices_train, indices_train)]
+    
     labels_train = labels[np.ix_(indices_train)]
 
     indices_test = []
@@ -80,10 +139,17 @@ def split_train_test(distances_mat, labels, test_size = 0.2):
         if i in indices_train:
             continue
         indices_test.append(i)
+    
     indices_test = np.array(indices_test)
     # print(indices_test)
 
-    dmat_test = distances_mat[np.ix_(indices_test, indices_train)]
+    if not is_divided:
+        dmat_test = distances_mat[np.ix_(indices_test, indices_train)]
+    else:
+        dmat_test = np.ndarray(shape=(distances_mat.shape[0],), dtype=np.ndarray)
+        for i in range(dmat_test.shape[0]):
+            dmat_test[i] = (distances_mat[i])[np.ix_(indices_test, indices_train)]
+
     labels_test = labels[np.ix_(indices_test)]
 
     return indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test
@@ -105,7 +171,6 @@ def patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row):
     return res
 
 
-#TODO: find a way to calculate the indices of the points in each patch of the test, and then predict all of the points- each point by the label of its patch
 def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_factor, num_patches_in_row):
     patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row)
 
@@ -118,6 +183,23 @@ def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_fa
 
     train_acc, train_preds,train_gt = clf.score(dmat_train, indices_train, labels_padded)
     test_acc, test_preds,test_gt= clf.score(dmat_test, indices_test, labels_padded)
+    print("Train Accuracy: ",train_acc)
+    print("Test Accuracy: ",test_acc)
+
+    return train_acc,test_acc, test_preds,test_gt
+
+def main_divided(distances_mat_arr, labels, n_neighbors, labels_padded, rows_factor, cols_factor, num_patches_in_row):
+    patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row)
+
+    distances_mat_arr, labels,patch_to_points_dict = throw_0_labels(distances_mat_arr, labels,patch_to_points_dict, is_divided=True)
+
+    indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test = split_train_test(distances_mat_arr, labels, test_size = 0.2, is_divided=True)
+
+    clf = kNN(n_neighbors=n_neighbors, is_divided = True)
+    clf.fit(labels=labels_train, patch_to_points_dict=patch_to_points_dict)
+
+    train_acc, train_preds,train_gt = clf.score_divided(dmat_train, indices_train, labels_padded)
+    test_acc, test_preds,test_gt= clf.score_divided(dmat_test, indices_test, labels_padded)
     print("Train Accuracy: ",train_acc)
     print("Test Accuracy: ",test_acc)
 

@@ -74,8 +74,6 @@ def normalize_each_band(X):
     return X_normalized
 
 def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center'):
-    X = X.reshape((610,340, 103))
-
     if is_normalize_each_band:
         X = normalize_each_band(X)
 
@@ -86,12 +84,8 @@ def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_l
     y_patches = y_patches.flatten()
 
     X_patches = X_patches.reshape(-1, np.prod(X_patches.shape[2:]))
-    
-    print(X_patches.shape)
 
     distances = cdist(X_patches, X_patches, 'euclidean')
-
-    print(distances.shape)
 
     P = calc_P(distances, apply_2_norm=True)
 
