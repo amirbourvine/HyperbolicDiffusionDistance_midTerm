@@ -1,6 +1,3 @@
-
-
-
 import numpy as np
 from classification import main_divided, patch_to_points, throw_0_labels, main
 from preperation import prepare
