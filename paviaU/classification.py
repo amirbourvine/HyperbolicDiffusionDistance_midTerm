@@ -3,6 +3,7 @@ import random
 
 
 
+
 class kNN():
     def __init__(self, n_neighbors:int = 3, is_divided = False):
         # assume non-negative labels
@@ -12,6 +13,9 @@ class kNN():
     def fit(self, labels, patch_to_points_dict):
       self.labels = labels
       self.patch_to_points_dict = patch_to_points_dict
+
+      print("patch_to_points_dict: ", patch_to_points_dict)
+      print("labels: ", labels)
       return self
 
     def score(self, distances, indices_test, y):
@@ -58,8 +62,9 @@ class kNN():
         X_kNN = sorted_distances_labels[:,:, :self.n_neighbors]
 
         X_kNN = np.swapaxes(X_kNN,0,1)
-        X_kNN = X_kNN.reshape(shape=(X_kNN.shape[0],X_kNN.shape[1]*X_kNN.shape[2]))
-
+        X_kNN = X_kNN.reshape((X_kNN.shape[0],X_kNN.shape[1]*X_kNN.shape[2]))
+        X_kNN = (X_kNN).astype(int)
+        print("X_kNN.shape: ", X_kNN.shape)
 
         predictions = np.zeros(X_kNN.shape[0])
         for i in range(predictions.shape[0]):
@@ -204,8 +209,3 @@ def main_divided(distances_mat_arr, labels, n_neighbors, labels_padded, rows_fac
     print("Test Accuracy: ",test_acc)
 
     return train_acc,test_acc, test_preds,test_gt
-
-
-
-
-    
