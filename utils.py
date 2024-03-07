@@ -9,7 +9,7 @@ from scipy.linalg import eigh
 from sklearn.manifold import MDS
 from scipy.spatial import distance
 from matplotlib.colors import Normalize
-
+import scipy
 # CONSTANTS:
 
 CONST_K = 19
@@ -244,7 +244,7 @@ def display_figure_C(shortest_paths_mat):
 
 
 #The HDD function
-def hdd(X, P):
+def hdd_old(X, P):
   d_HDD = np.zeros(P.shape)
   for i in range (P.shape[0]):
     for j in range (P.shape[0]):
@@ -252,6 +252,22 @@ def hdd(X, P):
       for k in range(CONST_K+1):
         sum += 2 * np.arcsinh((2 ** (-1 * k * ALPHA + 1)) * np.linalg.norm(X[k][i] - X[k][j]))
       d_HDD[i][j] = sum
+  return d_HDD
+
+def hdd(X, P):
+  d_HDD = np.zeros(P.shape)
+  alpha_powers = np.power(2, -ALPHA * np.arange(CONST_K + 1) + 1)
+
+  for i in range(P.shape[0]):
+      for j in range(P.shape[0]):
+          # Compute norms for all k simultaneously
+          norms = np.linalg.norm(X[:, i] - X[:, j], axis=1)
+          
+          # Compute the inner sum using vectorized operations
+          inner_sum = np.sum(2 * np.arcsinh(alpha_powers * norms))
+          
+          d_HDD[i][j] = inner_sum
+
   return d_HDD
 
 
