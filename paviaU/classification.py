@@ -1,6 +1,6 @@
 import numpy as np
 import random
-
+import time
 
 
 
@@ -177,19 +177,28 @@ def patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row):
 
 
 def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_factor, num_patches_in_row):
+
+    st = time.time()
+
     patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row)
 
     distances_mat, labels,patch_to_points_dict = throw_0_labels(distances_mat, labels,patch_to_points_dict)
 
     indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test = split_train_test(distances_mat, labels, test_size = 0.2)
 
+    print("DICT CREATION, THROW 0 LABELS, SPLIT TETS TRAIN TIME: ", time.time()-st)
+
     clf = kNN(n_neighbors=n_neighbors)
     clf.fit(labels=labels_train, patch_to_points_dict=patch_to_points_dict)
+
+    st = time.time()
 
     train_acc, train_preds,train_gt = clf.score(dmat_train, indices_train, labels_padded)
     test_acc, test_preds,test_gt= clf.score(dmat_test, indices_test, labels_padded)
     print("Train Accuracy: ",train_acc)
     print("Test Accuracy: ",test_acc)
+
+    print("SCORES TIME: ", time.time()-st)
 
     return train_acc,test_acc, test_preds,test_gt
 
