@@ -270,6 +270,16 @@ def hdd(X, P):
 
   return d_HDD
 
+def hdd_try(X, P):
+  d_HDD = np.zeros_like(P, dtype=float)
+  
+  for k in range(CONST_K + 1):
+      norms = scipy.spatial.distance.cdist(X[k], X[k])
+      sum_matrix = 2 * np.arcsinh((2 ** (-k * ALPHA + 1)) * norms)
+      d_HDD += sum_matrix
+
+  return d_HDD
+
 
 def display_figure_D(d_HDD):
   embedding = MDS(n_components=2, normalized_stress='auto', dissimilarity='precomputed')

@@ -1,7 +1,7 @@
 import numpy as np
 from classification import main_divided, patch_to_points, throw_0_labels, main
 from preperation import prepare
-from utils import hdd, hde
+from utils import hdd, hdd_try, hde
 import time
 
 def whole_pipeline_all(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center'):
@@ -36,8 +36,12 @@ def calc_hdd(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_
     print("HDE TIME: ", time.time()-st)
     st = time.time()
 
+    print("HDE.shape: ", HDE.shape)
     
-    hdd_mat = hdd(HDE, P)
+    hdd_mat = hdd_try(HDE, P)
+
+    # hdd_mat_2 = hdd(HDE, P)
+    # print("NORM: ", np.linalg.norm(hdd_mat-hdd_mat_2))
 
     print("HDD TIME: ", time.time()-st)
 
