@@ -33,17 +33,17 @@ def calc_hdd_for_multiprocessing(X,y, rows_factor, cols_factor):
     return hdd_mat
 
 def calc_hdd(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center'):
-    # st = time.time()
+    st = time.time()
     distances,P,y_patches,num_patches_in_row, labels_padded = prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=is_normalize_each_band, method_label_patch=method_label_patch)
     
-    # print("PREPARE TIME: ", time.time()-st)
-    # st = time.time()
+    print("PREPARE TIME: ", time.time()-st)
+    st = time.time()
 
     HDE = hde(distances)
     HDE = np.abs(HDE)
 
-    # print("HDE TIME: ", time.time()-st)
-    # st = time.time()
+    print("HDE TIME: ", time.time()-st)
+    st = time.time()
 
     # print("HDE.shape: ", HDE.shape)
     
@@ -52,7 +52,7 @@ def calc_hdd(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_
     # hdd_mat_2 = hdd(HDE, P)
     # print("NORM: ", np.linalg.norm(hdd_mat-hdd_mat_2))
 
-    # print("HDD TIME: ", time.time()-st)
+    print("HDD TIME: ", time.time()-st)
 
     return hdd_mat, labels_padded, num_patches_in_row,y_patches
     
