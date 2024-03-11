@@ -13,7 +13,7 @@ from utils import *
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib
 
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 
 def padWithZeros(X, left_margin, right_margin, top_margin, bottom_margin, dim=3):
     if dim == 3:

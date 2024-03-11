@@ -13,8 +13,8 @@ from classification import main_divided, main
 
 
 
-device = torch.device("cpu")
-# device = torch.device("cuda:0") # Uncomment this to run on GPU
+# device = torch.device("cpu")
+device = torch.device("cuda:0") # Uncomment this to run on GPU
 
 
 
@@ -240,7 +240,7 @@ def prepare_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, me
 
 def calc_hdd_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center'):
     st = time.time()
-    distances,P,y_patches,num_patches_in_row, labels_padded, _ = prepare_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=is_normalize_each_band, method_label_patch=method_label_patch)
+    distances,P,y_patches,num_patches_in_row, labels_padded = prepare_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=is_normalize_each_band, method_label_patch=method_label_patch)
     
     print("PREPARE TIME: ", time.time()-st)
     st = time.time()
@@ -287,9 +287,9 @@ def whole_pipeline_all_torch(X,y, rows_factor, cols_factor, is_normalize_each_ba
 def whole_pipeline_divided_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center', is_print=False):
     st = time.time()
     
-    num_patches = np.ciel(X.shape[0]/rows_factor)*np.ciel(X.shape[1]/cols_factor)
+    num_patches = int(np.ceil(X.shape[0]/rows_factor)*np.ceil(X.shape[1]/cols_factor))
 
-    distance_mat_arr = torch.ndarray(shape=(X.shape[-1],num_patches,num_patches))
+    distance_mat_arr = torch.zeros((X.shape[-1],num_patches,num_patches))
     for i in range(X.shape[-1]):
         if is_print:
             print((i+1)," out of: ", X.shape[-1])
