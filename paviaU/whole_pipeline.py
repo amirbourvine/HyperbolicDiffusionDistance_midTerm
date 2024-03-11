@@ -1,6 +1,6 @@
 import multiprocessing
 import numpy as np
-from classification import main_divided, patch_to_points, throw_0_labels, main
+from classification import main_divided, main
 from preperation import prepare
 from utils import hdd, hdd_try, hde
 import time

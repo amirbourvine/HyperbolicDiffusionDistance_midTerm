@@ -1,8 +1,15 @@
 import numpy as np
 from scipy.spatial.distance import cdist
+
 import sys
-sys.path.insert(1, '../')
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
 from utils import *
+
+
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib
 
@@ -66,8 +73,7 @@ def normalize_each_band(X):
     X_normalized = np.zeros_like(X,dtype=float)
     for i in range(X.shape[2]):
         X_band = X[:,:,i]
-        scaler = MinMaxScaler()
-        scaled_data = scaler.fit_transform(X_band)
+        scaled_data = (X_band - np.min(X_band)) / (np.max(X_band) - np.min(X_band))
         X_normalized[:,:,i] = scaled_data
 
     return X_normalized
@@ -82,6 +88,7 @@ def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_l
     if is_normalize_each_band:
         X = normalize_each_band(X)
 
+    X_normalized = X.copy()
     # print("NORMALIZATION: ", time.time()-st)
     # st = time.time()
 
@@ -108,7 +115,7 @@ def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_l
 
     # print("CALC_P: ", time.time()-st)
 
-    return distances,P,y_patches,num_patches_in_row, labels_padded
+    return distances,P,y_patches,num_patches_in_row, labels_padded, X_normalized
 
 def figure_B(distances, rows_factor, cols_factor):
     import math

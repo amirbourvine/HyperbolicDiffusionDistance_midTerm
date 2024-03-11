@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import earthpy.plot as ep
 
+import os
+
 def print_basic_statistics(df):
     print("Has 1 image, 103 spectral bands, 610 * 340 pixels (207400 in total)")
     print("every pixal is labeled between 0 and 9 (clustering ground truth)")
@@ -11,10 +13,11 @@ def print_basic_statistics(df):
     print(df.sample(5))
 
 def read_dataset(gt=False):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
     if gt:
-        df = pd.read_csv('paviaU_gt.csv')
+        df = pd.read_csv(os.path.join(current_dir,'paviaU_gt.csv'))
     else:
-        df = pd.read_csv('paviaU.csv')
+        df = pd.read_csv(os.path.join(current_dir,'paviaU.csv'))
 
     df.drop(df.columns[0], axis=1, inplace = True)
     
