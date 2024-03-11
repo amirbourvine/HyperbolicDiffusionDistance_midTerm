@@ -88,7 +88,6 @@ def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_l
     if is_normalize_each_band:
         X = normalize_each_band(X)
 
-    X_normalized = X.copy()
     # print("NORMALIZATION: ", time.time()-st)
     # st = time.time()
 
@@ -115,7 +114,7 @@ def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_l
 
     # print("CALC_P: ", time.time()-st)
 
-    return distances,P,y_patches,num_patches_in_row, labels_padded, X_normalized
+    return distances,P,y_patches,num_patches_in_row, labels_padded
 
 def figure_B(distances, rows_factor, cols_factor):
     import math

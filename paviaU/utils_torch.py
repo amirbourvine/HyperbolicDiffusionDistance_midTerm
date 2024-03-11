@@ -199,7 +199,6 @@ def prepare_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, me
     if is_normalize_each_band:
         X = normalize_each_band_torch(X)
 
-    X_normalized = torch.clone(X)
     # print("NORMALIZATION: ", time.time()-st)
     # st = time.time()
 
@@ -229,7 +228,7 @@ def prepare_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, me
     # print("CALC_P: ", time.time()-st)
 
 
-    return distances,P,y_patches,num_patches_in_row, labels_padded, X_normalized 
+    return distances,P,y_patches,num_patches_in_row, labels_padded 
 
 
 
@@ -322,10 +321,9 @@ def test_torch_implementation():
     rows_factor=21
     cols_factor=21
 
-    distances,P,y_patches,num_patches_in_row, labels_padded, X_normalized = prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center')
-    distances_c,P_c,y_patches_c,num_patches_in_row_c, labels_padded_c, X_normalized_c = prepare_torch(torch.from_numpy(X),torch.from_numpy(y), rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center')
+    distances,P,y_patches,num_patches_in_row, labels_padded = prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center')
+    distances_c,P_c,y_patches_c,num_patches_in_row_c, labels_padded_c = prepare_torch(torch.from_numpy(X),torch.from_numpy(y), rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center')
 
-    print("NORMALIZED DISTANCES: ", np.linalg.norm(X_normalized-(X_normalized_c.numpy())))
     print("NORM DISTANCES: ", np.linalg.norm(distances-(distances_c.numpy())))
     print("NORM P: ", np.linalg.norm(P-(P_c.numpy())))
     print("NORM y_patches: ", np.linalg.norm(y_patches-(y_patches_c.numpy())))
