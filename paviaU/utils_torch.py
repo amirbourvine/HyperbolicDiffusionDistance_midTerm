@@ -347,10 +347,11 @@ def whole_pipeline_divided_torch(X,y, rows_factor, cols_factor, is_normalize_eac
         d_HDD, labels_padded, num_patches_in_row,y_patches = calc_hdd_torch(X_curr,y, rows_factor, cols_factor, is_normalize_each_band=is_normalize_each_band, method_label_patch=method_label_patch)
         distance_mat_arr[i,:,:] = d_HDD
 
-        del X_curr
-        del d_HDD
-        del labels_padded
-        del y_patches
+        if i!=X.shape[-1]-1:
+            del X_curr
+            del d_HDD
+            del labels_padded
+            del y_patches
 
     
 
