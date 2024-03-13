@@ -1,9 +1,19 @@
 import numpy as np
 from scipy.spatial.distance import cdist
+
 import sys
-sys.path.insert(1, '../')
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
 from utils import *
+
+
 from sklearn.preprocessing import MinMaxScaler
+import matplotlib
+
+# matplotlib.use('TkAgg')
 
 def padWithZeros(X, left_margin, right_margin, top_margin, bottom_margin, dim=3):
     if dim == 3:
@@ -63,35 +73,46 @@ def normalize_each_band(X):
     X_normalized = np.zeros_like(X,dtype=float)
     for i in range(X.shape[2]):
         X_band = X[:,:,i]
-        scaler = MinMaxScaler()
-        scaled_data = scaler.fit_transform(X_band)
+        scaled_data = (X_band - np.min(X_band)) / (np.max(X_band) - np.min(X_band))
         X_normalized[:,:,i] = scaled_data
 
     return X_normalized
 
+import time
+
 def prepare(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center'):
-    X = X.reshape((610,340, 103))
+    # print("$$$$$$$$$$ IN PREPERATION $$$$$$$$$$$$")
+
+    # st = time.time()
 
     if is_normalize_each_band:
         X = normalize_each_band(X)
 
+    # print("NORMALIZATION: ", time.time()-st)
+    # st = time.time()
+
     X_patches, y_patches, labels_padded= patch_data(X, y, rows_factor, cols_factor, method_label_patch)
+    
+    # print("PATCHING: ", time.time()-st)
+    # st = time.time()
 
     num_patches_in_row = y_patches.shape[1]
 
     y_patches = y_patches.flatten()
 
     X_patches = X_patches.reshape(-1, np.prod(X_patches.shape[2:]))
-    
-    print(X_patches.shape)
+
+    # st = time.time()
 
     distances = cdist(X_patches, X_patches, 'euclidean')
-
-    print(distances.shape)
+    
+    # print("DISTANCES WITH CDIST: ", time.time()-st)
+    # st = time.time()
+    
 
     P = calc_P(distances, apply_2_norm=True)
 
-    print(P.shape)
+    # print("CALC_P: ", time.time()-st)
 
     return distances,P,y_patches,num_patches_in_row, labels_padded
 
