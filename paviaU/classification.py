@@ -161,7 +161,7 @@ def split_train_test(distances_mat, labels, test_size = 0.2, is_divided=False):
 
 def patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row):
     """
-    create a dict where key is i- index of patc in labels and value is (i_start, i_end, j_start, j_end)
+    create a dict where key is i- index of patch in labels and value is (i_start, i_end, j_start, j_end)
     which are the boundaries of indices of points of this patch
     """
     res = {}
@@ -173,6 +173,8 @@ def patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row):
         j_start = j_patch*cols_factor
         res[i] = (i_start, i_start+rows_factor, j_start, j_start+cols_factor)
     
+    print(res)
+
     return res
 
 
