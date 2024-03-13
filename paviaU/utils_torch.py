@@ -292,7 +292,7 @@ def whole_pipeline_divided_torch(X,y, rows_factor, cols_factor, is_normalize_eac
     
     num_patches = int(np.ceil(X.shape[0]/rows_factor)*np.ceil(X.shape[1]/cols_factor))
 
-    distance_mat_arr = torch.zeros((X.shape[-1],num_patches,num_patches))
+    distance_mat_arr = torch.zeros((X.shape[-1],num_patches,num_patches), device=device)
     for i in range(X.shape[-1]):
         if is_print:
             print((i+1)," out of: ", X.shape[-1])
