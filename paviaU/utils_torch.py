@@ -9,8 +9,8 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 from utils import CONST_K,ALPHA,TOL,CONST_C, hdd_try, hde
-from classification import main_divided, main
-
+#from classification import main_divided, main
+from classification_overlap import main_divided, main
 
 
 # device = torch.device("cpu")
@@ -151,6 +151,63 @@ def patch_data_torch(data, labels, rows_factor, cols_factor, method_label_patch)
 
     return patched_data, patched_labels, labels
 
+def calc_patch_overlap_label_torch(labels, i, j, rows_factor, cols_factor, rows_overlap, cols_overlap, method='center'):
+    if method=='center':
+        return labels[i*rows_overlap + rows_factor//2, j*cols_overlap + cols_factor//2]
+    elif method=='most_common':
+        labels_patch = (labels[i*rows_overlap : i*rows_overlap + rows_factor, j*cols_overlap : j*cols_overlap + cols_factor]).int()
+        counts = torch.bincount(labels_patch.flatten())
+
+        # in order to not let 0 values take over and set many labels to 0 which leads to small number of non zero labeled patches
+        counts[0]=0
+
+        return torch.argmax(counts)
+    
+    print("ERROR- INCORRECT METHOD FOR LABELING PATCHES")
+
+def patch_data_overlap_torch(data, labels, rows_factor, cols_factor, rows_overlap, cols_overlap, method_label_patch='most_common'):
+    #cols overlap represents how many cols we precede before starting a new patch
+    #for example for a 1x9 grid with 1X3 patches and cols_overlap = 2:
+    # (1 2 [3) 4 (5] 6 [7) 8 9]
+    #similar to rows overlap
+
+    rows, cols, channels = data.shape
+
+    #For now it makes sense in my head, for further explanation refer to future me
+    #I hope it would still make sense to me by then
+    left_margin = rows_factor - rows_factor % rows_overlap # = rows_factor // rows_overlap * rows_overlap
+    if(left_margin % rows_factor == 0): #get rid of redundent patch
+        left_margin -= rows_overlap
+    right_margin = rows_factor - rows % rows_overlap
+    if(right_margin % rows_factor == 0): #get rid of redundent patch
+        right_margin -= rows_overlap
+
+    top_margin = cols_factor - cols_factor % cols_overlap
+    if(top_margin % cols_factor == 0): #get rid of redundent patch
+        top_margin -= cols_overlap
+    bottom_margin = cols_factor - cols % cols_overlap
+    if(bottom_margin % cols_factor == 0): #get rid of redundent patch
+        bottom_margin -= cols_overlap
+
+    data = padWithZeros_torch(data, left_margin=left_margin, right_margin=right_margin, top_margin=top_margin, bottom_margin=bottom_margin)
+    labels = padWithZeros_torch(labels, left_margin=left_margin, right_margin=right_margin, top_margin=top_margin, bottom_margin=bottom_margin, dim=2)
+
+    new_rows, new_cols, _ = data.shape
+ 
+    patches_rows = 1 + (new_rows - rows_factor) // rows_overlap
+    patches_cols = 1 + (new_cols - cols_factor) // cols_overlap
+
+    patched_data = torch.empty((patches_rows, patches_cols, rows_factor, cols_factor, channels), dtype=data.dtype)
+    patched_labels = torch.zeros((patched_data.shape[0], patched_data.shape[1]), dtype=labels.dtype)
+
+    for i in range(patches_rows):
+        for j in range(patches_cols):
+            datapoint = data[i*rows_overlap: i*rows_overlap + rows_factor, j*cols_overlap: j*cols_overlap + cols_factor, :]
+            patched_data[i, j] = datapoint
+            patched_labels[i, j] = calc_patch_overlap_label_torch(labels, i, j, rows_factor, cols_factor, rows_overlap, cols_overlap, method=method_label_patch)
+
+    return patched_data, patched_labels, labels
+
 
 def normalize_each_band_torch(X):
     
@@ -190,7 +247,7 @@ def calc_P_torch(d, apply_2_norm=False):
   return P
 
 
-def prepare_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center'):
+def prepare_torch(X,y, rows_factor, cols_factor, rows_overlap=-1, cols_overlap=-1, is_normalize_each_band=True, method_label_patch='center'):
     # print("$$$$$$$$$$ IN PREPERATION $$$$$$$$$$$$")
 
     # st = time.time()
@@ -202,8 +259,12 @@ def prepare_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, me
     # print("NORMALIZATION: ", time.time()-st)
     # st = time.time()
 
-    X_patches, y_patches, labels_padded= patch_data_torch(X, y, rows_factor, cols_factor, method_label_patch)
+    if(rows_overlap == -1 or cols_overlap== -1):
+        X_patches, y_patches, labels_padded= patch_data_torch(X, y, rows_factor, cols_factor, method_label_patch)
     
+    else:
+        X_patches, y_patches, labels_padded= patch_data_overlap_torch(X, y, rows_factor, cols_factor, rows_overlap, cols_overlap, 'center')
+
     # print("PATCHING: ", time.time()-st)
     # st = time.time()
 
@@ -238,9 +299,9 @@ def prepare_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, me
 
 
 
-def calc_hdd_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center'):
+def calc_hdd_torch(X,y, rows_factor, cols_factor, rows_overlap=-1, cols_overlap=-1, is_normalize_each_band=True, method_label_patch='center'):
     st = time.time()
-    distances,P,y_patches,num_patches_in_row, labels_padded = prepare_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=is_normalize_each_band, method_label_patch=method_label_patch)
+    distances, P, y_patches, num_patches_in_row, labels_padded = prepare_torch(X,y, rows_factor, cols_factor, rows_overlap, cols_overlap, is_normalize_each_band=is_normalize_each_band, method_label_patch=method_label_patch)
     
     print("PREPARE TIME: ", time.time()-st)
     st = time.time()
@@ -264,10 +325,10 @@ def calc_hdd_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, m
 
 
 
-def whole_pipeline_all_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=True, method_label_patch='center'):
+def whole_pipeline_all_torch(X,y, rows_factor, cols_factor, rows_overlap=-1, cols_overlap=-1, is_normalize_each_band=True, method_label_patch='center'):
     print("XXXXXXX IN METHOD XXXXXXXXX")
     st = time.time()
-    d_HDD, labels_padded, num_patches_in_row,y_patches = calc_hdd_torch(X,y, rows_factor, cols_factor, is_normalize_each_band=is_normalize_each_band, method_label_patch=method_label_patch)
+    d_HDD, labels_padded, num_patches_in_row,y_patches = calc_hdd_torch(X,y, rows_factor, cols_factor, rows_overlap, cols_overlap, is_normalize_each_band=is_normalize_each_band, method_label_patch=method_label_patch)
 
     print("WHOLE METHOD TIME: ", time.time()-st)
     st = time.time()
@@ -277,7 +338,7 @@ def whole_pipeline_all_torch(X,y, rows_factor, cols_factor, is_normalize_each_ba
 
     y_patches = y_patches.int()
     
-    main(d_HDD.numpy(), y_patches.numpy(), n_neighbors, labels_padded.numpy(), rows_factor, cols_factor, num_patches_in_row)
+    main(d_HDD.numpy(), y_patches.numpy(), n_neighbors, labels_padded.numpy(), rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row)
 
     print("WHOLE CLASSIFICATION TIME: ", time.time()-st)
 

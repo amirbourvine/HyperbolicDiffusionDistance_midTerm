@@ -40,15 +40,27 @@ class kNN():
         for ind in range(predictions.shape[0]):
             ind_patch = indices_test[ind]
             i_start,i_end,j_start,j_end = self.patch_to_points_dict[ind_patch]
-            for i in range(i_start,i_end):
-                for j in range(j_start,j_end):
-                    if y[i,j]!=0:
-                        total_preds += 1
-                        if y[i,j] == predictions[ind]:
-                            total_correct += 1
+            i = (i_start + i_end) // 2
+            j = (j_start + j_end) // 2
 
-                        preds.append(predictions[ind])
-                        gt.append(y[i,j])
+            if y[i,j]!=0:
+                total_preds += 1
+                if y[i,j] == predictions[ind]:
+                    total_correct += 1
+
+                preds.append(predictions[ind])
+                gt.append(y[i,j])
+
+
+            # for i in range(i_start,i_end):
+            #     for j in range(j_start,j_end):
+            #         if y[i,j]!=0:
+            #             total_preds += 1
+            #             if y[i,j] == predictions[ind]:
+            #                 total_correct += 1
+
+            #             preds.append(predictions[ind])
+            #             gt.append(y[i,j])
         
         return total_correct/total_preds, preds,gt
     
@@ -159,30 +171,90 @@ def split_train_test(distances_mat, labels, test_size = 0.2, is_divided=False):
 
     return indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test
 
-def patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row):
+# def split_train_test(point_to_patches, labels, test_size = 0.2, is_divided=False):
+#     rows_size = max([t[1] for t in point_to_patches.keys()]) + 1
+    
+#     num_training = int(len(point_to_patches.keys())*(1-test_size))
+#     points_train = random.sample(range(0, len(point_to_patches.keys()) - 1), num_training)
+#     points_train = np.sort(points_train)
+#     points_train = [(rand // rows_size, rand % rows_size) for rand in points_train]
+
+#     # print(indices_train)
+#     # if not is_divided:
+#     #     dmat_train = distances_mat[np.ix_(indices_train, indices_train)]
+#     # else:
+#     #     dmat_train = np.ndarray(shape=(distances_mat.shape[0],), dtype=np.ndarray)
+#     #     for i in range(dmat_train.shape[0]):
+#     #         dmat_train[i] = (distances_mat[i])[np.ix_(indices_train, indices_train)]
+    
+#     def most_common_element(lst):
+#         unique_elements, counts = np.unique(lst, return_counts=True)
+#         max_count_index = np.argmax(counts)
+#         return unique_elements[max_count_index]
+    
+#     labels_train = {}
+#     labels_test = {}
+#     for point in point_to_patches.keys():
+#         patches_indices = point_to_patches[point]
+#         patches_labels = [labels[ind] for ind in patches_indices]
+
+#         if point in points_train:
+#             labels_train[point] = most_common_element(patches_labels) #internet trick for most common element
+
+#         else:
+#             labels_test[point] = most_common_element(patches_labels) #internet trick for most common element
+
+
+#     return points_train, labels_train, labels_test.keys(), labels_test
+
+
+
+def patch_to_points(labels, rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row):
     """
     create a dict where key is i- index of patch in labels and value is (i_start, i_end, j_start, j_end)
     which are the boundaries of indices of points of this patch
     """
+    if(rows_overlap == -1 or cols_overlap==-1):
+        res = {}
+        for i in range(labels.shape[0]):
+            i_patch = i // num_patches_in_row
+            j_patch = i % num_patches_in_row
+
+            i_start = i_patch*rows_factor
+            j_start = j_patch*cols_factor
+            res[i] = (i_start, i_start+rows_factor, j_start, j_start+cols_factor)
+        
+        return res
+
+    #Same calculation but with overlapping patches:
     res = {}
     for i in range(labels.shape[0]):
         i_patch = i // num_patches_in_row
         j_patch = i % num_patches_in_row
 
-        i_start = i_patch*rows_factor
-        j_start = j_patch*cols_factor
+        i_start = i_patch*rows_overlap
+        j_start = j_patch*cols_overlap
         res[i] = (i_start, i_start+rows_factor, j_start, j_start+cols_factor)
     
-    print(res)
+    return res
+
+def point_to_patches(patch_to_points):
+    res = {}
+    for patch_ind, patch_range in patch_to_points.items():
+        for i in range(patch_range[0], patch_range[1]):
+            for j in range(patch_range[2], patch_range[3]):
+                if (i, j) in res:
+                    res[(i, j)].append(patch_ind)
+                else:
+                    res[(i, j)] = [patch_ind]
 
     return res
 
-
-def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_factor, num_patches_in_row):
+def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row):
 
     st = time.time()
 
-    patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row)
+    patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor,  rows_overlap, cols_overlap, num_patches_in_row)
 
     distances_mat, labels,patch_to_points_dict = throw_0_labels(distances_mat, labels,patch_to_points_dict)
 
@@ -191,7 +263,8 @@ def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_fa
     print("DICT CREATION, THROW 0 LABELS, SPLIT TETS TRAIN TIME: ", time.time()-st)
 
     clf = kNN(n_neighbors=n_neighbors)
-    clf.fit(labels=labels_train, patch_to_points_dict=patch_to_points_dict)
+
+    clf.fit(labels=labels_train, patch_to_points_dict=patch_to_points_dict)  
 
     st = time.time()
 
