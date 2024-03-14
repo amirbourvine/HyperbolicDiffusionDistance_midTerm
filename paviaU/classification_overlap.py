@@ -277,8 +277,8 @@ def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_fa
 
     return train_acc,test_acc, test_preds,test_gt
 
-def main_divided(distances_mat_arr, labels, n_neighbors, labels_padded, rows_factor, cols_factor, num_patches_in_row):
-    patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row)
+def main_divided(distances_mat_arr, labels, n_neighbors, labels_padded, rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row):
+    patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor,  rows_overlap, cols_overlap, num_patches_in_row)
 
     distances_mat_arr, labels,patch_to_points_dict = throw_0_labels(distances_mat_arr, labels,patch_to_points_dict, is_divided=True)
 
