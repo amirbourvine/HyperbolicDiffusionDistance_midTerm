@@ -16,6 +16,7 @@ class kNN():
 
       print("patch_to_points_dict: ", patch_to_points_dict)
       print("labels: ", labels)
+      print("lavels shape: ", labels.shape)
       return self
 
     def score(self, distances, indices_test, y):
@@ -37,6 +38,7 @@ class kNN():
         total_correct = 0
         preds = []
         gt = []
+
         for ind in range(predictions.shape[0]):
             ind_patch = indices_test[ind]
             i_start,i_end,j_start,j_end = self.patch_to_points_dict[ind_patch]
@@ -106,25 +108,25 @@ class kNN():
         return total_correct/total_preds, preds,gt
 
 
-def throw_0_labels(distances_mat, labels, patch_to_points_dict, is_divided=False):
-    non_zero_indices = np.where(labels != 0)[0]
-    non_zero_indices = np.sort(non_zero_indices)
+# def throw_0_labels(distances_mat, labels, patch_to_points_dict, is_divided=False):
+#     non_zero_indices = np.where(labels != 0)[0]
+#     non_zero_indices = np.sort(non_zero_indices)
 
-    new_res = {}
-    for i in range(non_zero_indices.shape[0]):
-        new_res[i] = patch_to_points_dict[non_zero_indices[i]]
+#     new_res = {}
+#     for i in range(non_zero_indices.shape[0]):
+#         new_res[i] = patch_to_points_dict[non_zero_indices[i]]
 
-    labels_new = labels[np.ix_(non_zero_indices)]
+#     labels_new = labels[np.ix_(non_zero_indices)]
 
-    if not is_divided:
-        dmat_new = distances_mat[np.ix_(non_zero_indices, non_zero_indices)]
-        return dmat_new,labels_new, new_res
-    else:
-        distances_mat_new = np.ndarray(shape=(distances_mat.shape[0],), dtype=np.ndarray)
-        for i in range(distances_mat_new.shape[0]):
-            distances_mat_new[i] = (distances_mat[i])[np.ix_(non_zero_indices, non_zero_indices)]
+#     if not is_divided:
+#         dmat_new = distances_mat[np.ix_(non_zero_indices, non_zero_indices)]
+#         return dmat_new,labels_new, new_res
+#     else:
+#         distances_mat_new = np.ndarray(shape=(distances_mat.shape[0],), dtype=np.ndarray)
+#         for i in range(distances_mat_new.shape[0]):
+#             distances_mat_new[i] = (distances_mat[i])[np.ix_(non_zero_indices, non_zero_indices)]
 
-        return distances_mat_new,labels_new, new_res
+#         return distances_mat_new,labels_new, new_res
 
 
     
@@ -209,14 +211,14 @@ def split_train_test(distances_mat, labels, test_size = 0.2, is_divided=False):
 
 
 
-def patch_to_points(labels, rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row):
+def patch_to_points(labels, rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row, used_labels_indices):
     """
     create a dict where key is i- index of patch in labels and value is (i_start, i_end, j_start, j_end)
     which are the boundaries of indices of points of this patch
     """
     if(rows_overlap == -1 or cols_overlap==-1):
         res = {}
-        for i in range(labels.shape[0]):
+        for i in used_labels_indices:
             i_patch = i // num_patches_in_row
             j_patch = i % num_patches_in_row
 
@@ -228,7 +230,7 @@ def patch_to_points(labels, rows_factor, cols_factor, rows_overlap, cols_overlap
 
     #Same calculation but with overlapping patches:
     res = {}
-    for i in range(labels.shape[0]):
+    for i in used_labels_indices:
         i_patch = i // num_patches_in_row
         j_patch = i % num_patches_in_row
 
@@ -250,17 +252,17 @@ def point_to_patches(patch_to_points):
 
     return res
 
-def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row):
+def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row, used_labels_indices):
 
     st = time.time()
 
-    patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor,  rows_overlap, cols_overlap, num_patches_in_row)
+    patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor,  rows_overlap, cols_overlap, num_patches_in_row, used_labels_indices)
 
-    distances_mat, labels,patch_to_points_dict = throw_0_labels(distances_mat, labels,patch_to_points_dict)
+    print("patch to points len: ", len(patch_to_points_dict))
 
     indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test = split_train_test(distances_mat, labels, test_size = 0.2)
 
-    print("DICT CREATION, THROW 0 LABELS, SPLIT TETS TRAIN TIME: ", time.time()-st)
+    print("DICT CREATION, SPLIT TETS TRAIN TIME: ", time.time()-st)
 
     clf = kNN(n_neighbors=n_neighbors)
 
@@ -268,8 +270,8 @@ def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_fa
 
     st = time.time()
 
-    train_acc, train_preds,train_gt = clf.score(dmat_train, indices_train, labels_padded)
-    test_acc, test_preds,test_gt= clf.score(dmat_test, indices_test, labels_padded)
+    train_acc, train_preds,train_gt = clf.score(dmat_train, used_labels_indices[np.ix_(indices_train)], labels_padded)
+    test_acc, test_preds,test_gt= clf.score(dmat_test, used_labels_indices[np.ix_(indices_test)], labels_padded)
     print("Train Accuracy: ",train_acc)
     print("Test Accuracy: ",test_acc)
 
@@ -277,18 +279,16 @@ def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_fa
 
     return train_acc,test_acc, test_preds,test_gt
 
-def main_divided(distances_mat_arr, labels, n_neighbors, labels_padded, rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row):
-    patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor,  rows_overlap, cols_overlap, num_patches_in_row)
-
-    distances_mat_arr, labels,patch_to_points_dict = throw_0_labels(distances_mat_arr, labels,patch_to_points_dict, is_divided=True)
+def main_divided(distances_mat_arr, labels, n_neighbors, labels_padded, rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row, used_labels_indices):
+    patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor,  rows_overlap, cols_overlap, num_patches_in_row, used_labels_indices)
 
     indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test = split_train_test(distances_mat_arr, labels, test_size = 0.2, is_divided=True)
 
     clf = kNN(n_neighbors=n_neighbors, is_divided = True)
     clf.fit(labels=labels_train, patch_to_points_dict=patch_to_points_dict)
 
-    train_acc, train_preds,train_gt = clf.score_divided(dmat_train, indices_train, labels_padded)
-    test_acc, test_preds,test_gt= clf.score_divided(dmat_test, indices_test, labels_padded)
+    train_acc, train_preds,train_gt = clf.score_divided(dmat_train, used_labels_indices[np.ix_(indices_train)], labels_padded)
+    test_acc, test_preds,test_gt= clf.score_divided(dmat_test, used_labels_indices[np.ix_(indices_test)], labels_padded)
     print("Train Accuracy: ",train_acc)
     print("Test Accuracy: ",test_acc)
 

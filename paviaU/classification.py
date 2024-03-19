@@ -184,7 +184,7 @@ def main(distances_mat, labels, n_neighbors, labels_padded, rows_factor, cols_fa
 
     patch_to_points_dict = patch_to_points(labels, rows_factor, cols_factor, num_patches_in_row)
 
-    distances_mat, labels,patch_to_points_dict = throw_0_labels(distances_mat, labels,patch_to_points_dict)
+    distances_mat, labels, patch_to_points_dict = throw_0_labels(distances_mat, labels,patch_to_points_dict)
 
     indices_train,dmat_train,labels_train,indices_test,dmat_test,labels_test = split_train_test(distances_mat, labels, test_size = 0.2)
 
