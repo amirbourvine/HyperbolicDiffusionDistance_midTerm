@@ -48,6 +48,8 @@ def svd_symmetric_torch(M):
   v[:,s<0] = -u[:,s<0] #replacing the corresponding columns with negative sign
 
   torch.abs(s, out=s)
+  
+  s = s.to(device)
 
   torch.where(s>TOL, s, torch.tensor([TOL], device=device), out=s)
 
@@ -102,6 +104,9 @@ def hde_torch(shortest_paths_mat):
   for k in range (0, CONST_K + 1):
     S = torch.float_power(S_keep, 2 ** (-k))
 
+    U = U.to(device)
+    S = S.to(device)
+    Vt = Vt.to(device)
     aux = torch.matmul(torch.matmul(U,torch.diag(S)),Vt)
 
     aux = torch.t(torch.sqrt((torch.where(aux > TOL, aux, torch.tensor([TOL], device=device)))))
@@ -385,10 +390,10 @@ def whole_pipeline_all_torch(X,y, rows_factor, cols_factor, rows_overlap=-1, col
 
     y_patches = y_patches.int()
     
-    if torch.cuda.is_available():
-        d_HDD = d_HDD.cpu()
-        y_patches = y_patches.cpu()
-        labels_padded = labels_padded.cpu()
+    # if torch.cuda.is_available():
+    #     d_HDD = d_HDD.cpu()
+    #     y_patches = y_patches.cpu()
+    #     labels_padded = labels_padded.cpu()
 
 
     main(d_HDD.numpy(), y_patches.numpy(), n_neighbors, labels_padded.numpy(), rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row)
@@ -415,14 +420,14 @@ def aux_validate_patches_generation(X, y, is_normalize_each_band, overlap_distan
 
     y_patches = y_patches.int()
     
-    if torch.cuda.is_available():
-        d_HDD = d_HDD.cpu()
-        y_patches = y_patches.cpu()
-        labels_padded = labels_padded.cpu()
+    # if torch.cuda.is_available():
+    #     d_HDD = d_HDD.cpu()
+    #     y_patches = y_patches.cpu()
+    #     labels_padded = labels_padded.cpu()
 
     test_accs = np.zeros(checks)
     for i in range(checks):
-        _,test_acc, _,_ = main(d_HDD.numpy(), y_patches.numpy(), n_neighbors, labels_padded.numpy(), patches_size, patches_size, overlap_distance, overlap_distance, num_patches_in_row)
+        _,test_acc, _,_ = main(d_HDD.cpu().numpy(), y_patches.cpu().numpy(), n_neighbors, labels_padded.cpu().numpy(), patches_size, patches_size, overlap_distance, overlap_distance, num_patches_in_row)
         test_accs[i] = test_acc
 
     return np.mean(test_accs)
@@ -469,10 +474,10 @@ def whole_pipeline_divided_torch(X,y, rows_factor, cols_factor, rows_overlap=-1,
 
     y_patches = y_patches.int()
 
-    if torch.cuda.is_available():
-        distance_mat_arr = distance_mat_arr.cpu()
-        y_patches = y_patches.cpu()
-        labels_padded = labels_padded.cpu()
+    # if torch.cuda.is_available():
+    #     distance_mat_arr = distance_mat_arr.cpu()
+    #     y_patches = y_patches.cpu()
+    #     labels_padded = labels_padded.cpu()
 
     main_divided(distance_mat_arr.numpy(), y_patches.numpy(), n_neighbors, labels_padded.numpy(), rows_factor, cols_factor, rows_overlap, cols_overlap, num_patches_in_row)
 
