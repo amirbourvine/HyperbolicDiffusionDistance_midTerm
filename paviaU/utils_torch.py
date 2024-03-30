@@ -432,8 +432,27 @@ def aux_validate_patches_generation(X, y, is_normalize_each_band, overlap_distan
 
     return np.mean(test_accs)
 
-def validate_k(X, y, is_normalize_each_band, overlap_distance, patches_size, method_label_patches, checks):
-    pass
+def validate_k(X, y, is_normalize_each_band, patches_size, overlap_distance, checks):
+    ks = range(1, 10, 1)
+
+    validation_accs = []
+
+    X = X.to(device)
+    y = y.to(device)
+
+    d_HDD, labels_padded, num_patches_in_row,y_patches = calc_hdd_torch(X,y, patches_size, patches_size, overlap_distance, overlap_distance, is_normalize_each_band=is_normalize_each_band)
+
+    y_patches = y_patches.int()
+
+    for k in ks:
+        test_accs = np.zeros(checks)
+        for i in range(checks):
+            _,test_acc, _,_ = main(d_HDD.cpu().numpy(), y_patches.cpu().numpy(), k, labels_padded.cpu().numpy(), patches_size, patches_size, overlap_distance, overlap_distance, num_patches_in_row)
+            test_accs[i] = test_acc
+
+        validation_accs.append(np.mean(test_accs))
+
+    return ks, validation_accs
 
 
 def whole_pipeline_divided_torch(X,y, rows_factor, cols_factor, rows_overlap=-1, cols_overlap=-1, is_normalize_each_band=True, method_label_patch='center', is_print=False):
