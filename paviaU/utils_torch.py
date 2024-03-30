@@ -396,6 +396,39 @@ def whole_pipeline_all_torch(X,y, rows_factor, cols_factor, rows_overlap=-1, col
     print("WHOLE CLASSIFICATION TIME: ", time.time()-st)
 
 
+def validate_patches_generation(X, y, is_normalize_each_band, overlap_distance, n_neighbors, checks):
+    patches_sizes = range(overlap_distance + 1, overlap_distance * 3, 5)
+
+    validation_accs = []
+
+    for patches_size in patches_sizes:
+        validation_accs.append(aux_validate_patches_generation(X, y, is_normalize_each_band, overlap_distance, n_neighbors, patches_size, checks))
+
+    return patches_sizes, validation_accs
+
+
+def aux_validate_patches_generation(X, y, is_normalize_each_band, overlap_distance, n_neighbors, patches_size, checks):
+    X = X.to(device)
+    y = y.to(device)
+
+    d_HDD, labels_padded, num_patches_in_row,y_patches = calc_hdd_torch(X,y, patches_size, patches_size, overlap_distance, overlap_distance, is_normalize_each_band=is_normalize_each_band)
+
+    y_patches = y_patches.int()
+    
+    if torch.cuda.is_available():
+        d_HDD = d_HDD.cpu()
+        y_patches = y_patches.cpu()
+        labels_padded = labels_padded.cpu()
+
+    test_accs = np.zeros(checks)
+    for i in range(checks):
+        _,test_acc, _,_ = main(d_HDD.numpy(), y_patches.numpy(), n_neighbors, labels_padded.numpy(), patches_size, patches_size, overlap_distance, overlap_distance, num_patches_in_row)
+        test_accs[i] = test_acc
+
+    return np.mean(test_accs)
+
+def validate_k(X, y, is_normalize_each_band, overlap_distance, patches_size, method_label_patches, checks):
+    pass
 
 
 def whole_pipeline_divided_torch(X,y, rows_factor, cols_factor, rows_overlap=-1, cols_overlap=-1, is_normalize_each_band=True, method_label_patch='center', is_print=False):
