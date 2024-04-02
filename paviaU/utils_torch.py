@@ -10,8 +10,8 @@ sys.path.append(parent_dir)
 
 from utils import CONST_K,ALPHA,TOL,CONST_C, hdd_try, hde
 
-#from classification import main_divided, main
-from classification_overlap import main_divided, main
+from classification import main_divided, main
+#from classification_overlap import main_divided, main
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
@@ -433,7 +433,7 @@ def aux_validate_patches_generation(X, y, is_normalize_each_band, overlap_distan
     return np.mean(test_accs)
 
 def validate_k(X, y, is_normalize_each_band, patches_size, overlap_distance, checks, method_label_patch='center'):
-    ks = range(1, 10, 1)
+    ks = range(1, 11, 2)
 
     validation_accs = []
 
