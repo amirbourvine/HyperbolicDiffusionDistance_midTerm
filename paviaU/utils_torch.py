@@ -432,7 +432,7 @@ def aux_validate_patches_generation(X, y, is_normalize_each_band, overlap_distan
 
     return np.mean(test_accs)
 
-def validate_k(X, y, is_normalize_each_band, patches_size, overlap_distance, checks):
+def validate_k(X, y, is_normalize_each_band, patches_size, overlap_distance, checks, method_label_patch='center'):
     ks = range(1, 10, 1)
 
     validation_accs = []
@@ -440,9 +440,16 @@ def validate_k(X, y, is_normalize_each_band, patches_size, overlap_distance, che
     X = X.to(device)
     y = y.to(device)
 
-    d_HDD, labels_padded, num_patches_in_row,y_patches = calc_hdd_torch(X,y, patches_size, patches_size, overlap_distance, overlap_distance, is_normalize_each_band=is_normalize_each_band)
+    if(method_label_patch == 'most_common'):
+        patches_size = overlap_distance
+        overlap_distance = -1
+    d_HDD, labels_padded, num_patches_in_row,y_patches = calc_hdd_torch(X,y, patches_size, patches_size, overlap_distance, overlap_distance, is_normalize_each_band=is_normalize_each_band, method_label_patch=method_label_patch)
 
     y_patches = y_patches.int()
+
+    #change:
+    # #from classification import main
+    # from classification_overlap import main
 
     for k in ks:
         test_accs = np.zeros(checks)
