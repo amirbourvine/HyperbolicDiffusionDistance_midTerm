@@ -10,8 +10,8 @@ sys.path.append(parent_dir)
 
 from utils import CONST_K,ALPHA,TOL,CONST_C, hdd_try, hde
 
-from classification import main_divided, main
-#from classification_overlap import main_divided, main
+#from classification import main_divided, main
+from classification_overlap import main_divided, main
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
